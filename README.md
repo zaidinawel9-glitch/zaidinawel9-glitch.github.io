@@ -1,4 +1,7 @@
-# Cette première commande sert à pointer vers le répertoire qui contient les fichiers FASTQ.La commande list.files(path) sert à afficher la liste des fichiers qui se trouvent dans le dossier (MiSeq_SOP) indiqué par path.
+R Notebook
+================
+
+\# Cette première commande sert à pointer vers le répertoire qui contient les fichiers FASTQ.La commande list.files(path) sert à afficher la liste des fichiers qui se trouvent dans le dossier (MiSeq_SOP) indiqué par path.
 
 ``` r
 path <- "~/tutirial_ADM/MiSeq_SOP"
@@ -29,7 +32,7 @@ list.files(path)
     ## [43] "mouse.dpw.metadata"            "mouse.time.design"            
     ## [45] "stability.batch"               "stability.files"
 
-\#Charger le package DADA2 et vérifier sa version (utile pour la
+Charger le package DADA2 et vérifier sa version (utile pour la
 reproductibilité des résultats) — ici, c’est la version 1.28.0.
 
 ``` r
