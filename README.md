@@ -66,8 +66,8 @@ qualité baisse et décider jusqu’où couper les bases peu fiables.
 plotQualityProfile(fnFs[1:2])
 ```
 
-![](dada2_files/figure-gfm/unnamed-chunk-4-1.png)<!-- --> \#Définir les
-chemins de sortie pour les fastq filtrés.
+![](dada2_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+Définir les chemins de sortie pour les fastq filtrés.
 
 ``` r
 # Place filtered files in filtered/ subdirectory
@@ -260,7 +260,7 @@ head(mergers[[1]])
     ## 5       345       5       6    148         0      0      1   TRUE
     ## 6       282       6       5    148         0      0      2   TRUE
 
-# Crée la table ASV (échantillons en lignes, variants en colonnes)et affiche ses dimensions : nombre d’échantillons x nombre de variants
+Crée la table ASV (échantillons en lignes, variants en colonnes)et affiche ses dimensions : nombre d’échantillons x nombre de variants
 
 ``` r
 seqtab <- makeSequenceTable(mergers)
@@ -305,7 +305,7 @@ sum(seqtab.nochim)/sum(seqtab)
 
     ## [1] 0.9640374
 
-## Crée un tableau qui suit le nombre de lectures conservées à chaque étape, (filtrage, débruitage, fusion, suppression des chimères) pour chaque échantillon
+Crée un tableau qui suit le nombre de lectures conservées à chaque étape, (filtrage, débruitage, fusion, suppression des chimères) pour chaque échantillon
 
 ``` r
 getN <- function(x) sum(getUniques(x))
