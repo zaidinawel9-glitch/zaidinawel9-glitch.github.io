@@ -1,3 +1,3 @@
 theme: jekyll-theme-minimal
-title: Nawel's homepage
-description: Bookmark this to keep an eye on my project updates!
+title: Analyse bioinformatique du microbiote murin par le pipeline DADA2
+description: Dans ce projet, nous réanalysons des données de séquençage 16S MiSeq provenant du microbiote de souris. Nous utilisons le pipeline DADA2 pour nettoyer les séquences, corriger les erreurs et conserver uniquement les vraies variantes bactériennes (ASVs). Ensuite, nous identifions leur taxonomie grâce à la base SILVA. Enfin, avec Phyloseq, nous étudions la diversité des bactéries et comparons la composition du microbiote au début et à la fin de l’expérience. Travail réalisé par Nawel Zaidi.
