@@ -1,4 +1,3 @@
-R Notebook
 ================
 
 # Cette première commande sert à pointer vers le répertoire qui contient les fichiers FASTQ.La commande list.files(path) sert à afficher la liste des fichiers qui se trouvent dans le dossier (MiSeq_SOP) indiqué par path.
