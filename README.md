@@ -332,6 +332,9 @@ taxa <- assignTaxonomy(seqtab.nochim, "~/tutirial_ADM/silva_nr_v132_train_set.fa
 taxa <- addSpecies(taxa, "~/tutirial_ADM/silva_species_assignment_v132.fa.gz")
 ```
 
+Affiche la taxonomie de manière plus lisible en enlevant les noms de lignes,
+qui sont trop longs (séquences), pour faciliter l’affichage du tableau.
+
 ``` r
 taxa.print <- taxa # Removing sequence rownames for display only
 rownames(taxa.print) <- NULL
@@ -352,6 +355,8 @@ head(taxa.print)
     ## [4,] NA            NA     
     ## [5,] "Bacteroides" NA     
     ## [6,] NA            NA
+
+Charge le package DECIPHER (outil d’alignement de séquences) et vérifie sa version installée.
 
 ``` r
 library(DECIPHER); packageVersion("DECIPHER")
@@ -411,6 +416,16 @@ library(DECIPHER); packageVersion("DECIPHER")
 
     ## [1] '2.28.0'
 
+Utilise le package DECIPHER pour assigner la taxonomie aux ASV :
+
+1) Convertit les ASV (au départ en texte brut) en format ADN (DNAStringSet), indispensable pour permettre l’analyse taxonomique par DECIPHER.
+
+2) Charge la base de référence SILVA contenant les séquences de taxonomie connues, nécessaire pour comparer et identifier les ASV.
+
+3) Détermine le niveau taxonomique pour chaque ASV du domaine jusqu’à l’espèce mais uniquement si la correspondance est fiable (match exact pour l’espèce).
+
+4) Organise les résultats dans une matrice de taxonomie avec une colonne par niveau taxonomique (domain, phylum, class, order, family, genus, species).
+
 ``` r
 dna <- DNAStringSet(getSequences(seqtab.nochim)) # Create a DNAStringSet from the ASVs
 load("~/tutirial_ADM/SILVA_SSU_r138_2_2024.RData") # CHANGE TO THE PATH OF YOUR TRAINING SET
@@ -426,6 +441,12 @@ taxid <- t(sapply(ids, function(x) {
 colnames(taxid) <- ranks; rownames(taxid) <- getSequences(seqtab.nochim)
 ```
 
+Analyse de l’échantillon “Mock”, un contrôle positif contenant une communauté microbienne connue.
+
+Cette étape permet de vérifier que DADA2 détecte correctement les séquences attendues, sans faux positifs.
+
+On sélectionne les ASV réellement présentes dans le Mock, on les trie par abondance décroissante, puis on affiche le nombre total d’ASV détectées pour évaluer la performance du pipeline.
+
 ``` r
 unqs.mock <- seqtab.nochim["Mock",]
 unqs.mock <- sort(unqs.mock[unqs.mock>0], decreasing=TRUE) # Drop ASVs absent in the Mock
@@ -434,6 +455,16 @@ cat("DADA2 inferred", length(unqs.mock), "sample sequences present in the Mock c
 
     ## DADA2 inferred 20 sample sequences present in the Mock community.
 
+Vérifie la précision de l’assignation dans l’échantillon Mock :
+
+1) charge les séquences de référence du Mock (HMP_MOCK.v35.fasta), qui représentent les microorganismes réellement présentes,
+
+2) Compare chaque ASV détectée dans le Mock aux séquences de référence exactes du Mock,
+
+afin de vérifier si les ASV correspondent bien aux microorganismes réellement présentes dans cette communauté connue (contrôle positif).
+
+3) compte combien d’ASV correspondent exactement à une séquence connue, ce qui permet d’évaluer si DADA2 a correctement identifié toutes les bactéries attendues sans produire de séquences erronées.
+
 ``` r
 mock.ref <- getSequences(file.path(path, "HMP_MOCK.v35.fasta"))
 match.ref <- sum(sapply(names(unqs.mock), function(x) any(grepl(x, mock.ref))))
@@ -441,6 +472,8 @@ cat("Of those,", sum(match.ref), "were exact matches to the expected reference s
 ```
 
     ## Of those, 20 were exact matches to the expected reference sequences.
+
+Charge le package phyloseq et affiche sa version pour vérifier la compatibilité des analyses.
 
 ``` r
 library(phyloseq); packageVersion("phyloseq")
@@ -455,11 +488,15 @@ library(phyloseq); packageVersion("phyloseq")
 
     ## [1] '1.44.0'
 
+Charge le package Biostrings et affiche sa version pour vérifier la compatibilité avec les fonctions de manipulation des séquences ADN
+
 ``` r
 library(Biostrings); packageVersion("Biostrings")
 ```
 
     ## [1] '2.68.1'
+
+Charge le package ggplot2 et affiche sa version pour produire les graphiques
 
 ``` r
 library(ggplot2); packageVersion("ggplot2")
@@ -467,9 +504,15 @@ library(ggplot2); packageVersion("ggplot2")
 
     ## [1] '3.4.3'
 
+Définit le thème graphique par défaut (theme_bw) pour rendre les figures plus lisibles et homogènes
+
 ``` r
 theme_set(theme_bw())
 ```
+
+Crée une table de métadonnées à partir du nom des échantillons :
+
+on y extrait le sujet, le sexe et le jour d’échantillonnage, puis on classe les échantillons en deux groupes chronologiques : Early (≤100 jours) et Late (\>100 jours).
 
 ``` r
 samples.out <- rownames(seqtab.nochim)
@@ -483,12 +526,18 @@ samdf$When[samdf$Day>100] <- "Late"
 rownames(samdf) <- samples.out
 ```
 
+Crée l’objet phyloseq(ps) en combinant la table d’ASV, les métadonnées et la taxonomie, puis supprime l’échantillon témoin “Mock” qui est un contrôle positif pour ne garder que les échantillons biologiques réels à analyser.
+
 ``` r
 ps <- phyloseq(otu_table(seqtab.nochim, taxa_are_rows=FALSE), 
                sample_data(samdf), 
                tax_table(taxa))
 ps <- prune_samples(sample_names(ps) != "Mock", ps) # Remove mock sample
 ```
+
+Ajoute les séquences originales des ASV dans l’objet phyloseq(ps) sous forme de DNAStringSet,
+
+puis renomme les ASV avec des identifiants courts et normalisés (ASV1, ASV2, …) pour simplifier l’affichage et les analyses.
 
 ``` r
 dna <- Biostrings::DNAStringSet(taxa_names(ps))
@@ -504,6 +553,12 @@ ps
     ## tax_table()   Taxonomy Table:    [ 232 taxa by 7 taxonomic ranks ]
     ## refseq()      DNAStringSet:      [ 232 reference sequences ]
 
+Trace la diversité alpha des échantillons selon le jour d’échantillonnage,
+
+en utilisant les indices de diversité Shannon et Simpson, et colore les points selon la période (Early ou Late) pour comparer la richesse microbienne entre conditions.
+
+Les échantillons du groupe Early sont affichés en bleu et ceux du groupe Late en rouge, selon le codage couleur par défaut de ggplot2 appliqué à la variable “When”.
+
 ``` r
 plot_richness(ps, x="Day", measures=c("Shannon", "Simpson"), color="When")
 ```
@@ -517,6 +572,12 @@ plot_richness(ps, x="Day", measures=c("Shannon", "Simpson"), color="When")
 
 ![](dada2_files/figure-gfm/unnamed-chunk-33-1.png)<!-- -->
 
+Normalise les données en proportions pour rendre les échantillons comparables,
+
+puis réalise une ordination NMDS pour visualiser lesquels se ressemblent le plus.
+
+Un graphique où les points proches = microbiotes similaires, les points éloignés = microbiotes différents
+
 ``` r
 # Transform data to proportions as appropriate for Bray-Curtis distances
 ps.prop <- transform_sample_counts(ps, function(otu) otu/sum(otu))
@@ -524,45 +585,52 @@ ord.nmds.bray <- ordinate(ps.prop, method="NMDS", distance="bray")
 ```
 
     ## Run 0 stress 0.08043117 
-    ## Run 1 stress 0.09477202 
+    ## Run 1 stress 0.101063 
     ## Run 2 stress 0.08043117 
-    ## ... Procrustes: rmse 1.355971e-06  max resid 2.551124e-06 
+    ## ... Procrustes: rmse 3.600759e-06  max resid 9.31433e-06 
     ## ... Similar to previous best
-    ## Run 3 stress 0.08076339 
-    ## ... Procrustes: rmse 0.01054612  max resid 0.03246533 
-    ## Run 4 stress 0.08076336 
-    ## ... Procrustes: rmse 0.01047991  max resid 0.0322493 
-    ## Run 5 stress 0.1228545 
-    ## Run 6 stress 0.08076339 
-    ## ... Procrustes: rmse 0.01055709  max resid 0.03250106 
-    ## Run 7 stress 0.1326151 
-    ## Run 8 stress 0.1212044 
-    ## Run 9 stress 0.08616061 
+    ## Run 3 stress 0.1334791 
+    ## Run 4 stress 0.0807634 
+    ## ... Procrustes: rmse 0.01056765  max resid 0.03253528 
+    ## Run 5 stress 0.08076339 
+    ## ... Procrustes: rmse 0.01054464  max resid 0.03246081 
+    ## Run 6 stress 0.08043117 
+    ## ... Procrustes: rmse 2.105104e-06  max resid 5.750913e-06 
+    ## ... Similar to previous best
+    ## Run 7 stress 0.08616061 
+    ## Run 8 stress 0.08076339 
+    ## ... Procrustes: rmse 0.01053203  max resid 0.03242299 
+    ## Run 9 stress 0.1212044 
     ## Run 10 stress 0.08076339 
-    ## ... Procrustes: rmse 0.01055109  max resid 0.03248151 
-    ## Run 11 stress 0.09477215 
+    ## ... Procrustes: rmse 0.01055391  max resid 0.03249063 
+    ## Run 11 stress 0.08616061 
     ## Run 12 stress 0.08616061 
-    ## Run 13 stress 0.08043117 
-    ## ... Procrustes: rmse 2.228831e-06  max resid 4.350831e-06 
-    ## ... Similar to previous best
-    ## Run 14 stress 0.08076337 
-    ## ... Procrustes: rmse 0.01051059  max resid 0.03234913 
-    ## Run 15 stress 0.143287 
-    ## Run 16 stress 0.08616061 
-    ## Run 17 stress 0.1010628 
-    ## Run 18 stress 0.0947721 
-    ## Run 19 stress 0.08043116 
-    ## ... New best solution
-    ## ... Procrustes: rmse 2.302045e-06  max resid 6.096224e-06 
-    ## ... Similar to previous best
-    ## Run 20 stress 0.3744246 
-    ## *** Best solution repeated 1 times
+    ## Run 13 stress 0.1010629 
+    ## Run 14 stress 0.08076339 
+    ## ... Procrustes: rmse 0.01054561  max resid 0.03246312 
+    ## Run 15 stress 0.1262108 
+    ## Run 16 stress 0.1334791 
+    ## Run 17 stress 0.08616061 
+    ## Run 18 stress 0.09477212 
+    ## Run 19 stress 0.1320348 
+    ## Run 20 stress 0.08616061 
+    ## *** Best solution repeated 2 times
+
+Affiche la représentation NMDS pour visualiser les différences et les similarité de composition microbienne entre échantillons,
+
+en colorant les points selon la variable “When” (Early ou Late) afin d’observer une éventuelle séparation des deux groupes.
 
 ``` r
 plot_ordination(ps.prop, ord.nmds.bray, color="When", title="Bray NMDS")
 ```
 
 ![](dada2_files/figure-gfm/unnamed-chunk-35-1.png)<!-- -->
+
+Sélectionne les 20 familles les plus abondantes, normalise les abondances en proportions,
+
+conserve uniquement ces 20 taxa dans l’objet phyloseq, puis affiche un barplot de leur composition
+
+en fonction du jour d’échantillonnage, avec une séparation des échantillons Early et Late pour comparer les profils microbiens.
 
 ``` r
 top20 <- names(sort(taxa_sums(ps), decreasing=TRUE))[1:20]
@@ -571,4 +639,4 @@ ps.top20 <- prune_taxa(top20, ps.top20)
 plot_bar(ps.top20, x="Day", fill="Family") + facet_wrap(~When, scales="free_x")
 ```
 
-![Classification des 20 familles les plus abondantes](assets/image/graph_dernier.png)<!-- -->
+![Classification des 20 familles les plus abondantes](assets/image/graph_dernier.png)
