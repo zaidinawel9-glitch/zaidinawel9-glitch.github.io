@@ -1,5 +1,3 @@
-Exploration et Réanalyse du Pipeline DADA2 pour la détection des Variants Amplicon (ASVs)
-================
 R Notebook
 ================
 

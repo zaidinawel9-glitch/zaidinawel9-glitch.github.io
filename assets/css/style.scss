@@ -106,3 +106,32 @@ figure, img {
 small {
   display: none !important;
 }
+
+.nb-columns {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+  width: 100%;
+  height: 80vh;
+  overflow: hidden;
+}
+
+.nb-left, .nb-right {
+  flex: 1 1 0;
+  max-width: 50%;
+  height: 100%;
+  overflow-y: auto;
+  scroll-behavior: smooth; 
+  padding-right: .5rem;
+}
+
+.nb-right {
+  border-left: 1px solid #eaecef;
+  padding-left: 1rem;
+}
+
+@media (pointer: fine) {
+  body {
+    background-attachment: scroll;
+  }
+}
